@@ -20,7 +20,6 @@ colour = "#83aa6b"
 [pheromone]
 persistence = 30
 qty_ph_upon_foodfind = 30
-spider_find = 20
 
 [graphics]
 nest.radius = 20
@@ -34,9 +33,6 @@ ant.scouting_colour = "#AF0220"
 ant.notscouting_colour = "#3BC302"
 ant.builder_colour = "#F8B620"
 ant.warrior_colour = "#004DFF"
-
-spider.radius = 4
-spider.colour = "#232C16"
 
 environment.backgroundcolour = "#F4F2F0" #зеленоватый = #A9D846
 
