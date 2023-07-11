@@ -1,0 +1,47 @@
+[insects]
+energy = 5
+
+[ant]
+stepsize = 4
+ini_energy = 10
+war_energy = 20
+builder_energy = 10
+energy_to_create_new_ant = 60
+
+[environment]
+width = 750
+height = 500
+[nest]
+ini_foodqty = 30
+
+[food]
+colour = "#83aa6b"
+
+[pheromone]
+persistence = 30
+qty_ph_upon_foodfind = 30
+spider_find = 20
+
+[graphics]
+nest.radius = 20
+nest.colour = "#F27E1D"
+
+insects.radius = 1
+insects.scouting_colour = "#000000"
+
+ant.radius = 2
+ant.scouting_colour = "#AF0220"
+ant.notscouting_colour = "#3BC302"
+ant.builder_colour = "#F8B620"
+ant.warrior_colour = "#004DFF"
+
+spider.radius = 4
+spider.colour = "#232C16"
+
+environment.backgroundcolour = "#F4F2F0" #зеленоватый = #A9D846
+
+food.ini_colour = "#83aa6b"
+
+pheromone.radius = 0.1
+pheromone.colour = "#050994"
+
