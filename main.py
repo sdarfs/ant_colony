@@ -7,6 +7,7 @@ from copy import copy
 from random import choice, randrange, randint
 from tkinter import *
 import tomllib
+from tkinter import messagebox
 
 with open("config.toml", mode="rb") as fp:
     _CONFIG_ = tomllib.load(fp)
@@ -93,7 +94,7 @@ class AntBuilder(Ant):
         self.display = circle(self.posx, self.posy, _CONFIG_['graphics']['ant']['radius'], self.canvas,
                               _CONFIG_['graphics']['ant']['builder_colour'])
 
-        self.energy = _CONFIG_['ant']['builder_energy']
+        self.energy = _CONFIG_['ant']['ini_energy']
 
 
 class AntWarrior(Ant):
@@ -102,7 +103,7 @@ class AntWarrior(Ant):
         self.display = circle(self.posx, self.posy, _CONFIG_['graphics']['ant']['radius'], self.canvas,
                               _CONFIG_['graphics']['ant']['warrior_colour'])
 
-        self.energy = _CONFIG_['ant']['war_energy']
+        self.energy = _CONFIG_['ant']['ini_energy']
 
 
 class Environment:
@@ -135,8 +136,8 @@ class Environment:
         self.food = Food(self.environment)
 
         self.ant_data = [Ant(self.nest, self.environment, ) for i in range(self.ant_number)]
-        self.antBuilder_data = [AntBuilder(self.nest, self.environment, ) for i in range(self.ant_make)]
-        self.antWarrior_data = [AntWarrior(self.nest, self.environment, ) for i in range(self.ant_warrior)]
+        self.antBuilder_data = [AntBuilder(self.nest, self.environment) for i in range(self.ant_make)]
+        self.antWarrior_data = [AntWarrior(self.nest, self.environment) for i in range(self.ant_warrior)]
         # self.spider_data = [Spider(self.environment, self.nest) for i in range(self.spider)]
 
         self.environment.after(
@@ -264,7 +265,7 @@ class Environment:
                 if collision == 2:
                     self.food.life -= 5
                     self.environment.itemconfig(self.food.display, fill="#83aa6b")
-                    ant_b.energy = _CONFIG_['ant']['builder_energy']
+                    ant_b.energy = _CONFIG_['ant']['ini_energy']
 
                     # Если еда была перемещена
                     if self.food.life < 1:
@@ -300,45 +301,47 @@ class Environment:
 
 
         for ant_w in self.antWarrior_data:
-            ant_w.energy -= 0.001
-            if ant_w.energy <= 0:
-                ant_w.remove_from_display()
-                self.antWarrior_data = [an_ant_w for an_ant_w in self.antWarrior_data if an_ant_w is not ant_w]
-                continue
+            if sim_args.mode == 'basic':
+                ant_w.energy -= 0.001
+                if ant_w.energy <= 0:
+                    ant_w.remove_from_display()
+                    self.antWarrior_data = [an_ant for an_ant in self.antWarrior_data if an_ant is not ant_w]
+                    continue
 
             if ant_w.scout_mode:
                 if ant_w.posx <= 0 or ant_w.posy <= 0 or ant_w.posx >= e_w - 1 or ant_w.posy >= e_h - 1:
                     coord = choice(dont_out(ant_w))
                 else:
+
                     coord = pheromones_affinity(ant_w, self.environment, len(self.antWarrior_data))
                     if not coord:
                         coord = move_tab
                     coord = choice(coord)
 
-                ant_w.posx += coord[0]*0.1
-                ant_w.posy += coord[1]*0.1
+                ant_w.posx += coord[0]
+                ant_w.posy += coord[1]
                 self.environment.move(ant_w.display, coord[0], coord[1])
 
                 collision = collide(self.environment, ant_w)
-
                 if collision == 2:
                     self.food.life -= 1
                     self.environment.itemconfig(self.food.display, fill="#83aa6b")
-                    ant_w.energy = _CONFIG_['ant']['war_energy']
+                    ant_w.energy = _CONFIG_['ant']['ini_energy']
 
-                    # Если еда была перемещена
                     if self.food.life < 1:
                         self.food.replace(self.environment)
                         self.environment.itemconfig(self.food.display, fill="#83aa6b")
                     ant_w.scout_mode = False
                     self.environment.itemconfig(ant_w.display, fill=_CONFIG_['graphics']['ant']['notscouting_colour'])
+
                     _ = [pheromones.append(Pheromone(ant_w, self.environment))
                          for i in range(_CONFIG_['pheromone']['qty_ph_upon_foodfind'])]
+
                 elif collision == 1:
                     ant_w.energy += self.nest.feed_ant(ant_w)
-                    # если муравей "коснулся" еды, то образуется связь
 
-            else:  # если муравьишка нашел еду
+
+            else:
                 coord = choice(find_nest(ant_w, self.environment, len(self.antWarrior_data)))
                 proba = choice([0] * 23 + [1])
                 if proba:
@@ -346,15 +349,12 @@ class Environment:
                 ant_w.posx += coord[0]
                 ant_w.posy += coord[1]
                 self.environment.move(ant_w.display, coord[0], coord[1])
-
                 if collide(self.environment, ant_w) == 1:
                     ant_w.scout_mode = True
                     self.environment.itemconfig(ant_w.display, fill=_CONFIG_['graphics']['ant']['warrior_colour'])
 
-                    # Ants delivers food to the nest
                     self.nest.food_storage += 1
 
-                    # Ant eats energy from the nest
                     ant_w.energy += self.nest.feed_ant(ant_w)
 
             if len(self.antWarrior_data) <= 100:
@@ -480,16 +480,19 @@ def pheromones_affinity(ant, canvas, ant_num):
     return new_move_tab
 
 
+
+
 class mainWindow:
     def __init__(self, mode):
         self.root = Tk()
+        self.root.geometry('300x350')
         self.root.geometry('300x350')
         self.root.title('Создание муравьиной фермы')
         self.mode = mode
 
         tk.Label(self.root, text='Добытчики еды:').place(x=10, y=10)
-        tk.Label(self.root, text="Строителей: ").place(x=10, y=40)
-        tk.Label(self.root, text="Разведчик: ").place(x=10, y=70)
+        tk.Label(self.root, text="Строители: ").place(x=10, y=40)
+        tk.Label(self.root, text="Разведчики: ").place(x=10, y=70)
 
         val = StringVar()
         val1 = StringVar()
@@ -503,6 +506,24 @@ class mainWindow:
 
         ant_war_field = tk.Spinbox(from_=0.0, to=100.0, textvariable=val2)
         ant_war_field.place(x=120, y=70, width=66)
+        mainmenu = Menu(self.root)
+        self.root.config(menu=mainmenu)
+        filemenu = Menu(mainmenu, tearoff=0)
+
+        def clicked():
+            messagebox.showinfo('Муравиная ферма', 'Чтобы начать работу с программой необходимо ввести количество муравьев от 0 до 100 и нажать кнопку "Ок"')
+        filemenu.add_command(label="Выход", command=self.root.destroy)
+
+        helpmenu = Menu(mainmenu, tearoff=0)
+        helpmenu.add_command(label="О программе",command=clicked)
+
+
+        mainmenu.add_cascade(label="Файл", menu=filemenu)
+        mainmenu.add_cascade(label="Справка", menu=helpmenu)
+
+
+
+
 
         def secondWindow(val_, val1_, val2_):
             window = tk.Tk()
@@ -512,15 +533,8 @@ class mainWindow:
             val = int(val_.get())
             val1 = int(val1_.get())
             val2 = int(val2_.get())
-            # val3 = int(val3_.get())
-
-            # if not val.isdigit() or not val1.isdigit() or not val2.isdigit() or not val3.isdigit():
-            #    messagebox.showerror("Ошибка",
-            #                 "Должно быть введено число")
-            #    mainWindow()
-            # else:
-
             Environment(val, val1, val2, mode, window)
+
 
         def create_new_window(event):
             self.root.destroy()
@@ -530,6 +544,7 @@ class mainWindow:
         but.bind('<Button->', create_new_window)
         but.pack(anchor=S, padx=10, pady=100)
         self.root.mainloop()
+
 
 
 if __name__ == '__main__':

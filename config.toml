@@ -4,8 +4,6 @@ energy = 5
 [ant]
 stepsize = 4
 ini_energy = 10
-war_energy = 20
-builder_energy = 10
 energy_to_create_new_ant = 60
 
 [environment]
